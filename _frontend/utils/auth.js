@@ -4,32 +4,41 @@ import { del, get, put } from "./localstorage";
 
 export default {
   set(auth) {
+    console.log("Setting auth:", auth);
     put("auth", auth);
   },
 
   get() {
-    return get("auth");
+    const authData = get("auth");
+    console.log("Getting auth:", authData);
+    return authData;
   },
 
   clear() {
+    console.log("Clearing auth");
     del("auth");
   },
 
   async oktokit() {
     const Octokit = (await import("octokit")).Octokit;
+    const token = this.get()?.access_token;
+    console.log("Creating Octokit with token:", token ? "exists" : "missing");
 
     return new Octokit({
-      auth: this.get().access_token,
+      auth: token,
     });
   },
 
   async request(...args) {
     try {
+      console.log("Making request:", args[0]);
       return await (await this.oktokit()).request(...args);
     } catch (error) {
+      console.error("Request error:", error);
       if (error.status === 401) {
+        console.log("Unauthorized, clearing auth");
         this.clear();
-        location.refresh();
+        location.reload();
 
         // handle Octokit error
         // see https://github.com/octokit/request-error.js
@@ -41,7 +50,9 @@ export default {
   },
 
   check() {
-    return Boolean(this.get());
+    const isAuthenticated = Boolean(this.get());
+    console.log("Auth check:", isAuthenticated);
+    return isAuthenticated;
   },
 
   async user() {
