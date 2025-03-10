@@ -26,7 +26,7 @@ description: >- # this means to ignore newlines until "baseurl:"
   Reprose is Markdown edior for Github mainly aim to edit
   blog posts or documentation pages in Github
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "https://reprose.surgo.info/" # the base hostname & protocol for your site, e.g. http://example.com
+url: "https://rtest.surgo.info" # the base hostname & protocol for your site, e.g. http://example.com
 
 defaults:
   - scope:
