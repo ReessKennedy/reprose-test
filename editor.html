@@ -7,81 +7,159 @@ full: true
 
 <template x-init="!auth.check() ? location.href='/' : ''"></template>
 
-<form
-    class="flex flex-col gap-6 items-center"
-    id="editor-form"
-    x-data="editor"
-    x-on:change="handleChange"
-    x-on:submit.prevent="save"
-    x-on:attributes-updated="updateAttributes"
-    x-on:beforeunload.window="handlePageUnload"
->
-    <header class="header">
-        <div class="header-buttons header-buttons-start">
-            <a
-                href="reprose:browse"
-                class="button"
-                x-html="`${icons.open} <span class='hidden lg:block'>Open</span>`"
-                x-bind:data-disabled="loading || saving"
-            ></a>
+<div class="flex flex-row w-full h-screen">
+    <!-- Left sidebar with document list (30% width) -->
+    <div class="w-[30%] h-full border-r border-slate-200 bg-white overflow-y-auto p-4">
+        <div
+            x-data="finder"
+            data-finder-url="/editor"
+            class="flex flex-col gap-4"
+        >
+            <div class="flex flex-row items-center justify-between mb-4">
+                <h2 class="text-xl font-bold">Documents</h2>
+                <button
+                    x-on:click="navigate([])"
+                    class="text-blue-600 hover:text-blue-500 transition"
+                    title="Navigate to repositories"
+                >
+                    <span x-html="icons.repo"></span>
+                </button>
+            </div>
+            
+            <template x-if="path.length > 0">
+                <div class="flex flex-row gap-2 items-center mb-4 text-sm overflow-x-auto whitespace-nowrap pb-2">
+                    <button
+                        x-on:click="navigate([])"
+                        x-html="icons.repo"
+                        class="hover:text-blue-500 transition"
+                        title="Navigate to repositories"
+                    ></button>
+                    <template x-for="(item, index) in path">
+                        <div class="flex items-center">
+                            <span class="text-slate-400 mx-1">→</span>
+                            <button
+                                x-html="`${icons.dir} <span>${item.name}</span>`"
+                                class="flex items-center gap-1 hover:text-blue-500 transition"
+                                x-on:click="navigate(path.slice(0, index + 1))"
+                                title="Navigate to directory"
+                            ></button>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+            <input
+                type="search"
+                x-model="search"
+                class="py-1 px-4 text-sm rounded-md border border-slate-300 mb-4"
+                x-bind:placeholder="path.length === 0 ? 'Search for repository…' : 'Search in directory…'"
+            />
+
+            <div class="flex flex-col gap-1">
+                <template x-if="loading">
+                    <div class="flex justify-center py-4" x-html="icons.spinner"></div>
+                </template>
+                <template x-if="!loading && _items().length === 0">
+                    <div class="text-center py-4 text-slate-500">Empty</div>
+                </template>
+                <template x-for="item in _items">
+                    <button
+                        class="flex items-center gap-2 p-2 text-left hover:bg-slate-100 rounded-md transition"
+                        x-on:click="select(item)"
+                        title="Select"
+                    >
+                        <span
+                            x-html="item.type === 'repo' ? icons.repo : item.type === 'dir' ? icons.dir : icons.doc"
+                        ></span>
+                        <span
+                            x-text="item.name"
+                            class="flex-1 truncate"
+                        ></span>
+                        <template
+                            x-if="item.type === 'repo' || item.type === 'dir'"
+                        >
+                            <span x-html="icons.chevron"></span>
+                        </template>
+                    </button>
+                </template>
+            </div>
         </div>
+    </div>
 
-        <div class="header-buttons header-buttons-end">
-            <a
-                class="button"
-                target="_blank"
-                x-bind:href="statusUrl"
-                x-html="statusHtml"
-                x-on:click="clearStatus"
-                x-show="Boolean(status)"
-            ></a>
-            <a
-                href="reprose:delete"
-                class="button"
-                x-html="`${icons.trash} <span class='hidden lg:block'>Delete</span>`"
-                x-show="!loading && isExists()"
-            ></a>
-            <a
-                href="reprose:save"
-                x-html="saving ? icons.spinner : `${icons.save} <span class='hidden lg:block'>Save</span>`"
-                x-bind:data-disabled="loading || saving"
-                x-bind:class="`button ${changed ? 'button-primary' : ''}`"
-                title="Save"
-            ></a>
-        </div>
-    </header>
+    <!-- Right side with editor (70% width) -->
+    <div class="w-[70%] h-full overflow-y-auto">
+        <form
+            class="flex flex-col gap-6 p-6"
+            id="editor-form"
+            x-data="editor"
+            x-on:change="handleChange"
+            x-on:submit.prevent="save"
+            x-on:attributes-updated="updateAttributes"
+            x-on:beforeunload.window="handlePageUnload"
+        >
+            <header class="header">
+                <div class="header-buttons header-buttons-start">
+                    <!-- Removed the Open button since we now have the sidebar -->
+                </div>
 
-    <template x-if="!loading">
-        <ul class="kvlist">
-            <li class="kvlist-item">
-                <input
-                    type="text"
-                    class="kvlist-input kvlist-input-key"
-                    value="filename"
-                    readonly
-                />
-                <input
-                    type="text"
-                    name="filename"
-                    class="kvlist-input kvlist-input-value"
-                    required
-                    x-model:value="filename"
-                />
-            </li>
-        </ul>
-    </template>
+                <div class="header-buttons header-buttons-end">
+                    <a
+                        class="button"
+                        target="_blank"
+                        x-bind:href="statusUrl"
+                        x-html="statusHtml"
+                        x-on:click="clearStatus"
+                        x-show="Boolean(status)"
+                    ></a>
+                    <a
+                        href="reprose:delete"
+                        class="button"
+                        x-html="`${icons.trash} <span class='hidden lg:block'>Delete</span>`"
+                        x-show="!loading && isExists()"
+                    ></a>
+                    <a
+                        href="reprose:save"
+                        x-html="saving ? icons.spinner : `${icons.save} <span class='hidden lg:block'>Save</span>`"
+                        x-bind:data-disabled="loading || saving"
+                        x-bind:class="`button ${changed ? 'button-primary' : ''}`"
+                        title="Save"
+                    ></a>
+                </div>
+            </header>
 
-    <template x-if="!loading">
-        <!-- prettier-ingore -->
-        {% include attributes.html %}
-    </template>
+            <template x-if="!loading">
+                <ul class="kvlist">
+                    <li class="kvlist-item">
+                        <input
+                            type="text"
+                            class="kvlist-input kvlist-input-key"
+                            value="filename"
+                            readonly
+                        />
+                        <input
+                            type="text"
+                            name="filename"
+                            class="kvlist-input kvlist-input-value"
+                            required
+                            x-model:value="filename"
+                        />
+                    </li>
+                </ul>
+            </template>
 
-    <template x-if="!loading">
-        <textarea
-            x-ref="input"
-            class="bg-transparent resize-none pointer-events-none"
-        ></textarea>
-    </template>
+            <template x-if="!loading">
+                <!-- prettier-ingore -->
+                {% include attributes.html %}
+            </template>
 
-    <div x-show="loading" class="loading" x-html="icons.spinner"></div>
-</form>
+            <template x-if="!loading">
+                <textarea
+                    x-ref="input"
+                    class="bg-transparent resize-none pointer-events-none"
+                ></textarea>
+            </template>
+
+            <div x-show="loading" class="loading" x-html="icons.spinner"></div>
+        </form>
+    </div>
+</div>
