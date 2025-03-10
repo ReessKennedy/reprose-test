@@ -89,7 +89,7 @@ full: true
     <!-- Right side with editor (70% width) -->
     <div class="w-[70%] h-full overflow-y-auto">
         <form
-            class="flex flex-col gap-6 p-6"
+            class="flex flex-col gap-3 p-4"
             id="editor-form"
             x-data="editor"
             x-on:change="handleChange"
@@ -128,7 +128,7 @@ full: true
             </header>
 
             <template x-if="!loading">
-                <ul class="kvlist">
+                <ul class="kvlist kvlist-compact">
                     <li class="kvlist-item">
                         <input
                             type="text"
