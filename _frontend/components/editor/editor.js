@@ -95,6 +95,19 @@ window.editor = () => {
           },
         },
       });
+
+      window.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'frontmatter-update') {
+          this.filename = event.data.filename;
+          this.attributes = {};
+          
+          event.data.fields.forEach(field => {
+            this.attributes[field.name] = field.value;
+          });
+          
+          this.changed = true;
+        }
+      });
     },
 
     handleChange() {
@@ -329,6 +342,27 @@ window.editor = () => {
       }
 
       return "";
+    },
+
+    openFrontmatterModal() {
+      const data = {
+        type: 'frontmatter-data',
+        filename: this.filename,
+        fields: this.fields()
+      };
+
+      parent.postMessage(
+        `modal:open?${new URLSearchParams({
+          url: "/frontmatter",
+          height: 600
+        })}`,
+        "*"
+      );
+
+      // Wait a bit for the modal to open before sending the data
+      setTimeout(() => {
+        window.frames[0].postMessage(data, '*');
+      }, 100);
     },
   };
 };

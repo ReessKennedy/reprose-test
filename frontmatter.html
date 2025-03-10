@@ -1,0 +1,73 @@
+---
+layout: default
+title: Edit Frontmatter
+header: false
+full: true
+buttonsEnd: modal_close_button.html
+---
+
+<div
+    x-data="frontmatter"
+    class="p-4 h-full flex flex-col"
+>
+    <h2 class="text-xl font-bold mb-4">Edit Frontmatter</h2>
+    
+    <div class="flex-1 overflow-y-auto">
+        <ul class="kvlist kvlist-full">
+            <li class="kvlist-item">
+                <input
+                    type="text"
+                    class="kvlist-input kvlist-input-key"
+                    value="filename"
+                    readonly
+                />
+                <input
+                    type="text"
+                    name="filename"
+                    class="kvlist-input kvlist-input-value"
+                    required
+                    x-model="filename"
+                />
+            </li>
+        </ul>
+        
+        {% include attributes.html %}
+    </div>
+    
+    <div class="flex justify-end mt-4">
+        <button
+            class="button button-primary"
+            x-on:click="save"
+            x-html="`${icons.circleCheck} <span>Apply</span>`"
+        ></button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('frontmatter', () => ({
+            filename: '',
+            fields: [],
+            
+            init() {
+                window.addEventListener('message', (event) => {
+                    if (event.data && event.data.type === 'frontmatter-data') {
+                        this.filename = event.data.filename;
+                        this.fields = event.data.fields;
+                    }
+                });
+            },
+            
+            save() {
+                const data = {
+                    type: 'frontmatter-update',
+                    filename: this.filename,
+                    fields: this.fields
+                };
+                
+                parent.postMessage(data, '*');
+                parent.postMessage('modal:close', '*');
+            }
+        }));
+    });
+</script> 
